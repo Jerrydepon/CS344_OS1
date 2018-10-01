@@ -1,0 +1,200 @@
+#!/bin/bash 
+# Program 1 - matrices
+# ID: 933271081, Chih-Hsiang Wagn
+
+# declare & variables for global
+declare -A matrix1 
+declare -A matrix2
+row_num1=0
+col_num1=0
+row_num2=0
+col_num2=0
+# read the files in & create two matrixs
+# 1. read the file line by line
+# 2. divide the elements in each line and store them separately into matrix
+read1() {
+	while read myLine1 
+	do
+	       col_num1=0
+	       for i in $myLine1
+	       do
+	               	matrix1[$row_num1,$col_num1]=$i 
+	               	((col_num1++))
+	       done
+	       ((row_num1++))
+	done < $1
+}
+read2() {
+        while read myLine2
+        do      
+                col_num2=0
+                for i in $myLine2
+                do      
+                       	 matrix2[$row_num2,$col_num2]=$i
+                       	 ((col_num2++))
+                done
+                ((row_num2++))
+        done < $1
+}
+# dimension - print the dimensions of the matrix as the number of rows, followed by a space, then the number of columns
+# 1. read only one file in
+# 2. print out the calculated values of row_num & col_num during step of read file
+dims() {
+        read1 $1
+
+	echo $row_num1 $col_num1
+}
+# transpose - reflect the elements of the matrix along the main diagonal
+# 1. read only one file in
+# 2. new num_row = old num_col
+# 3. new num_col = old num_row
+# 4. print out the old col into new row
+transpose() {
+	read1 $1	
+
+	for ((i=0;i<col_num1;i++))
+	do
+		for ((j=0;j<row_num1;j++))
+		do
+			if [ "$j" == "$(($row_num1 - 1))" ]
+			then
+				echo -n "${matrix1[$j,$i]}"
+			else	
+				echo -n "${matrix1[$j,$i]}	"	
+			fi
+		done
+		echo
+	done
+}
+# mean - take an MxN matrix and return an 1xN row vector
+# 1. read only one file in
+# 2. final dimension of matrix is 1*col_num
+# 3. for each col, add all the elemnts in rows
+# 4. use rounding formula to calculate mean and print out mean 
+mean() {
+	read1 $1
+	sum=0
+	mean=0
+	
+	for ((i=0;i<col_num1;i++))
+	do
+		sum=0
+		mean=0
+		for ((j=0;j<row_num1;j++))
+		do
+			sum=$(( $sum + ${matrix1[$j,$i]} ))	
+		done
+		
+		# rounding formula: (a + (b/2)*( (a>0)*2-1 )) / b	
+		mean=$(( ($sum + ($row_num1/2) * ( ($sum>0)*2-1 )) / $row_num1 ))
+		if [ "$i" == "$((col_num1 - 1))" ]
+		then
+			echo -n "$mean"
+		else
+			echo -n "$mean	"
+		fi
+	done
+	echo
+}
+# add - take two MxN matrices and add them together element-wise to produce an MxN matrix. add should return an error if the matrices do not have the same dimensions.
+# 1. read only two files in and check the dimensions
+# 2. run through the matrix and add two elements in each step, then print the sum out
+add() {
+	read1 $1
+	read2 $2
+	sum=0
+
+	# check the equality of two dims of matrixs
+	if [ $row_num1 -ne $row_num2 ] || [ $col_num1 -ne $col_num2 ]
+	then
+		echo "invalid dimensions for adding" 1>&2
+		exit 100
+	fi
+
+	for ((i=0;i<row_num1;i++)) 
+	do
+		for ((j=0;j<col_num1;j++)) 
+		do
+			sum=$(( ${matrix1[$i,$j]} + ${matrix2[$i,$j]} ))
+
+			if [ "$j" == "$(($col_num1 - 1))" ]
+			then
+				echo -n "$sum"
+			else
+				echo -n "$sum	"
+			fi
+		done
+		echo
+	done
+}
+# multiply - take an MxN and NxP matrix and produce an MxP matrix
+# 1. read only two files in
+# 2. new row_num = row_num of matrix1
+# 3. new col_num = col_num of matrix2
+# 4. sum = (matrix1[0][0] * matrix2[0][0]) + (matrix1[0][1] * matrix2[1][0]) + (matrix1[0][2] * matrix2[2][0]) + ......
+# 5. print out each sum
+multiply() {
+	read1 $1
+	read2 $2
+	sum=0
+	
+	# the dimension of final matrix will be row_num1 * col_num2
+	for ((i=0;i<row_num1;i++))
+	do
+		for ((j=0;j<col_num2;j++))
+		do
+			sum=0
+			for ((k=0;k<col_num1;k++))
+			do
+				sum=$(( $sum + $((${matrix1[$i,$k]} * ${matrix2[$k,$j]})) ))
+			done
+
+			if [ "$j" == "$(($col_num2 - 1))" ]
+			then
+				echo -n "$sum"
+			else
+				echo -n "$sum	"
+			fi
+		done
+		echo
+	done
+}
+# determine which function to use & check the format of command
+# 1. check function name
+# 2. check number of auguments
+# 3. check if user need to keyin matrix
+# 4. check if files are readable
+fun_name=$1
+if [ "$fun_name" == "dims" ] || [ "$fun_name" == "transpose" ] || [ "$fun_name" == "mean" ]
+then	
+	# either stdin $2 or get input from user
+	matrix_stdin="${2:-/dev/stdin}"
+	
+	if test "$3"
+	then
+		echo "invalid number of input files" 1>&2
+		exit 100
+	elif ! [ -r $2 ]
+	then
+		echo "file is not readable" 1>&2
+		exit 100
+	else
+		$fun_name $matrix_stdin
+	fi
+elif [ "$fun_name" == "add" ] || [ "$fun_name" == "multiply" ]
+then
+	if (($# == 1)) || test "$4"
+	then
+		echo "invalid number of input files" 1>&2
+		exit 100
+	elif ! [ -r $2 ] || ! [ -r $3 ]
+	then
+		echo "file is not readable" 1>&2
+		exit 100
+	else
+		$fun_name $2 $3
+	fi
+else
+	echo "invalid function name" 1>&2
+	exit 100
+fi
