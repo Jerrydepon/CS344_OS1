@@ -1,6 +1,6 @@
 #!/bin/bash 
 # Program 1 - matrices
-# ID: 933271081, Chih-Hsiang Wagn
+# ID: 933271081, Chih-Hsiang Wang
 
 # declare & variables for global
 declare -A matrix1 
