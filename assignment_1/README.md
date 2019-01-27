@@ -1,6 +1,6 @@
 # OS HW1
 
-# dimenstion
+# dimension
 # transpose
 # mean
 # add
